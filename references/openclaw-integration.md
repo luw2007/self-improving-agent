@@ -1,34 +1,46 @@
 # OpenClaw Integration
 
-Setup guide for using the self-improvement skill with OpenClaw.
+Complete setup and usage guide for integrating the self-improvement skill with OpenClaw.
 
 ## Overview
 
-OpenClaw uses event-driven hooks (not prompt-intercept like Claude Code). The hook fires on `agent:bootstrap` to inject a reminder before workspace files are loaded.
+OpenClaw uses workspace-based prompt injection combined with event-driven hooks. Context is injected from workspace files at session start, and hooks can trigger on lifecycle events.
+
+## Workspace Structure
+
+```
+~/.openclaw/                      
+├── workspace/                   # Working directory
+│   ├── AGENTS.md               # Multi-agent coordination patterns
+│   ├── SOUL.md                 # Behavioral guidelines and personality
+│   ├── TOOLS.md                # Tool capabilities and gotchas
+│   ├── MEMORY.md               # Long-term memory (main session only)
+│   └── memory/                 # Daily memory files
+│       └── YYYY-MM-DD.md
+├── skills/                      # Installed skills
+│   └── <skill-name>/
+│       └── SKILL.md
+└── hooks/                       # Custom hooks
+    └── <hook-name>/
+        ├── HOOK.md
+        └── handler.ts
+```
 
 ## Quick Setup
 
 ### 1. Install the Skill
 
-Copy the skill to OpenClaw's skills directory:
+```bash
+clawdhub install self-improving-agent
+```
+
+Or copy manually:
 
 ```bash
 cp -r self-improving-agent ~/.openclaw/skills/
 ```
 
-Configure OpenClaw to load from the skills directory:
-
-```json
-{
-  "skills": {
-    "load": {
-      "extraDirs": ["~/.openclaw/skills"]
-    }
-  }
-}
-```
-
-### 2. Install the Hook
+### 2. Install the Hook (Optional)
 
 Copy the hook to OpenClaw's hooks directory:
 
@@ -42,23 +54,6 @@ Enable the hook:
 openclaw hooks enable self-improvement
 ```
 
-Enable internal hooks in config:
-
-```json
-{
-  "hooks": {
-    "internal": {
-      "enabled": true,
-      "entries": {
-        "self-improvement": {
-          "enabled": true
-        }
-      }
-    }
-  }
-}
-```
-
 ### 3. Create Learning Files
 
 Create the `.learnings/` directory in your workspace:
@@ -67,72 +62,156 @@ Create the `.learnings/` directory in your workspace:
 mkdir -p ~/.openclaw/workspace/.learnings
 ```
 
-Create the log files with headers:
+Or in the skill directory:
 
-**LEARNINGS.md:**
-```markdown
-# Learnings Log
-
-Captured learnings, corrections, and discoveries. Review before major tasks.
-
----
+```bash
+mkdir -p ~/.openclaw/skills/self-improving-agent/.learnings
 ```
 
-**ERRORS.md:**
+## Injected Prompt Files
+
+### AGENTS.md
+
+Purpose: Multi-agent workflows and delegation patterns.
+
 ```markdown
-# Errors Log
+# Agent Coordination
 
-Command failures, exceptions, and unexpected behaviors.
+## Delegation Rules
+- Use explore agent for open-ended codebase questions
+- Spawn sub-agents for long-running tasks
+- Use sessions_send for cross-session communication
 
----
+## Session Handoff
+When delegating to another session:
+1. Provide full context in the handoff message
+2. Include relevant file paths
+3. Specify expected output format
 ```
 
-**FEATURE_REQUESTS.md:**
+### SOUL.md
+
+Purpose: Behavioral guidelines and communication style.
+
 ```markdown
-# Feature Requests
+# Behavioral Guidelines
 
-Capabilities requested by user that don't currently exist.
+## Communication Style
+- Be direct and concise
+- Avoid unnecessary caveats and disclaimers
+- Use technical language appropriate to context
 
----
+## Error Handling
+- Admit mistakes promptly
+- Provide corrected information immediately
+- Log significant errors to learnings
 ```
 
-## How It Works
+### TOOLS.md
 
-1. **Hook fires** on `agent:bootstrap` (before workspace files inject)
-2. **Reminder injected** into agent context as virtual bootstrap file
-3. **Agent evaluates** after tasks whether to log learnings
-4. **Patterns promoted** to SOUL.md, AGENTS.md, or TOOLS.md when proven
+Purpose: Tool capabilities, integration gotchas, local configuration.
 
-## Available Events
+```markdown
+# Tool Knowledge
 
-OpenClaw hooks support these events:
+## Self-Improvement Skill
+Log learnings to `.learnings/` for continuous improvement.
+
+## Local Tools
+- Document tool-specific gotchas here
+- Note authentication requirements
+- Track integration quirks
+```
+
+## Learning Workflow
+
+### Capturing Learnings
+
+1. **In-session**: Log to `.learnings/` as usual
+2. **Cross-session**: Promote to workspace files
+
+### Promotion Decision Tree
+
+```
+Is the learning project-specific?
+├── Yes → Keep in .learnings/
+└── No → Is it behavioral/style-related?
+    ├── Yes → Promote to SOUL.md
+    └── No → Is it tool-related?
+        ├── Yes → Promote to TOOLS.md
+        └── No → Promote to AGENTS.md (workflow)
+```
+
+### Promotion Format Examples
+
+**From learning:**
+> Git push to GitHub fails without auth configured - triggers desktop prompt
+
+**To TOOLS.md:**
+```markdown
+## Git
+- Don't push without confirming auth is configured
+- Use `gh auth status` to check GitHub CLI auth
+```
+
+## Inter-Agent Communication
+
+OpenClaw provides tools for cross-session communication:
+
+### sessions_list
+
+View active and recent sessions:
+```
+sessions_list(activeMinutes=30, messageLimit=3)
+```
+
+### sessions_history
+
+Read transcript from another session:
+```
+sessions_history(sessionKey="session-id", limit=50)
+```
+
+### sessions_send
+
+Send message to another session:
+```
+sessions_send(sessionKey="session-id", message="Learning: API requires X-Custom-Header")
+```
+
+### sessions_spawn
+
+Spawn a background sub-agent:
+```
+sessions_spawn(task="Research X and report back", label="research")
+```
+
+## Available Hook Events
 
 | Event | When It Fires |
 |-------|---------------|
-| `agent:bootstrap` | Before workspace files inject (used by this skill) |
+| `agent:bootstrap` | Before workspace files inject |
 | `command:new` | When `/new` command issued |
 | `command:reset` | When `/reset` command issued |
 | `command:stop` | When `/stop` command issued |
 | `gateway:startup` | When gateway starts |
 
-## Promotion Targets
+## Detection Triggers
 
-| Learning Type | Promote To |
-|---------------|------------|
-| Behavioral patterns | `SOUL.md` |
-| Workflow improvements | `AGENTS.md` |
-| Tool gotchas | `TOOLS.md` |
+### Standard Triggers
+- User corrections ("No, that's wrong...")
+- Command failures (non-zero exit codes)
+- API errors
+- Knowledge gaps
 
-## Differences from Claude Code
+### OpenClaw-Specific Triggers
 
-| Feature | Claude Code | OpenClaw |
-|---------|-------------|----------|
-| Prompt intercept | ✓ UserPromptSubmit | ✗ Not available |
-| Tool use detection | ✓ PostToolUse | ✗ Not available |
-| Bootstrap injection | ✗ | ✓ agent:bootstrap |
-| Command hooks | ✗ | ✓ command:new/reset/stop |
-
-OpenClaw hooks are lifecycle-based, not prompt-based. The reminder is injected once at session start, not after every message.
+| Trigger | Action |
+|---------|--------|
+| Tool call error | Log to TOOLS.md with tool name |
+| Session handoff confusion | Log to AGENTS.md with delegation pattern |
+| Model behavior surprise | Log to SOUL.md with expected vs actual |
+| Skill issue | Log to .learnings/ or report upstream |
 
 ## Verification
 
@@ -142,31 +221,28 @@ Check hook is registered:
 openclaw hooks list
 ```
 
-Should show:
-```
-🧠 self-improvement ✓
+Check skill is loaded:
+
+```bash
+openclaw status
 ```
 
 ## Troubleshooting
 
-### Hook not discovered
-
-1. Check directory structure:
-   ```bash
-   ls ~/.openclaw/hooks/self-improvement/
-   # Should show: HOOK.md, handler.ts
-   ```
-
-2. Verify HOOK.md has correct frontmatter
-
 ### Hook not firing
 
-1. Ensure internal hooks enabled in config
+1. Ensure hooks enabled in config
 2. Restart gateway after config changes
 3. Check gateway logs for errors
 
 ### Learnings not persisting
 
-1. Verify `.learnings/` directory exists in workspace
+1. Verify `.learnings/` directory exists
 2. Check file permissions
 3. Ensure workspace path is configured correctly
+
+### Skill not loading
+
+1. Check skill is in skills directory
+2. Verify SKILL.md has correct frontmatter
+3. Run `openclaw status` to see loaded skills
