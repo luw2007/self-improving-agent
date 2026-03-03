@@ -31,9 +31,9 @@ OpenClaw is the primary platform for this skill. It uses workspace-based prompt 
 
 ### Installation
 
-**Via ClawdHub (recommended):**
+**Via ClawHub（推荐，与 OpenClaw 文档一致）：**
 ```bash
-clawdhub install self-improving-agent
+clawhub install self-improving-agent
 ```
 
 **Manual:**
@@ -60,6 +60,20 @@ OpenClaw injects these files into every session:
     ├── ERRORS.md
     └── FEATURE_REQUESTS.md
 ```
+
+### 结构说明（路径约定）
+
+为避免把“源码目录 / 安装目录 / workspace 目录”混在一起，建议按以下约定理解并配置：
+
+- `<workspace>`：你的 OpenClaw workspace 目录（常见为 `~/.openclaw/workspace`，也可能是你的项目目录）
+- `<skill-dir>`：`<workspace>/skills/self-improving-agent`（ClawHub 默认安装位置）或 `~/.openclaw/skills/self-improving-agent`（全局安装）
+- 学习日志写入：`<workspace>/.learnings/*.md`
+- 偏好记忆（PAHF）写入：`<workspace>/memory/preferences/<user_key>.md`
+
+### 迁移
+
+- 如果你之前使用了 `clawdhub ...`：统一替换为 `clawhub ...`
+- 如果你在 hook / 配置中写了 `./skills/self-improvement/...`：替换为 `./skills/self-improving-agent/...`
 
 ### Create Learning Files
 
@@ -479,7 +493,7 @@ Create `.claude/settings.json` in your project:
       "matcher": "",
       "hooks": [{
         "type": "command",
-        "command": "./skills/self-improvement/scripts/activator.sh"
+        "command": "./skills/self-improving-agent/scripts/activator.sh"
       }]
     }]
   }
@@ -497,14 +511,14 @@ This injects a learning evaluation reminder after each prompt (~50-100 tokens ov
       "matcher": "",
       "hooks": [{
         "type": "command",
-        "command": "./skills/self-improvement/scripts/activator.sh"
+        "command": "./skills/self-improving-agent/scripts/activator.sh"
       }]
     }],
     "PostToolUse": [{
       "matcher": "Bash",
       "hooks": [{
         "type": "command",
-        "command": "./skills/self-improvement/scripts/error-detector.sh"
+        "command": "./skills/self-improving-agent/scripts/error-detector.sh"
       }]
     }]
   }
@@ -541,8 +555,8 @@ A learning qualifies for skill extraction when ANY of these apply:
 1. **Identify candidate**: Learning meets extraction criteria
 2. **Run helper** (or create manually):
    ```bash
-   ./skills/self-improvement/scripts/extract-skill.sh skill-name --dry-run
-   ./skills/self-improvement/scripts/extract-skill.sh skill-name
+   ./skills/self-improving-agent/scripts/extract-skill.sh skill-name --dry-run
+   ./skills/self-improving-agent/scripts/extract-skill.sh skill-name
    ```
 3. **Customize SKILL.md**: Fill in template with learning content
 4. **Update learning**: Set status to `promoted_to_skill`, add `Skill-Path`

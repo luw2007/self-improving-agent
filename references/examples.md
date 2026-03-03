@@ -2,6 +2,24 @@
 
 Concrete examples of well-formatted entries with all fields.
 
+## Preference Memory: Drift Update (PAHF)
+
+```markdown
+### [PREF-20260303-001] shopping/connectivity
+
+**Updated**: 2026-03-03T10:00:00+08:00
+**Status**: active
+**Confidence**: high
+**Type**: global
+
+#### Preference
+The user prefers RF transmitter connectivity for headphones.
+
+#### Evidence
+- From: post-action
+- Quote: "I used to prefer bluetooth, but now I prefer RF transmitter."
+```
+
 ## Learning: Correction
 
 ```markdown

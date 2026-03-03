@@ -2,6 +2,8 @@
 
 Configure automatic self-improvement triggers for AI coding agents.
 
+本文假设你已将本仓库作为“可执行脚本目录”放在某个路径下（例如 OpenClaw 的 `<workspace>/skills/self-improving-agent`，或你的项目目录下 `./skills/self-improving-agent`）。下面用 `<skill-dir>` 表示该目录。
+
 ## Overview
 
 Hooks enable proactive learning capture by injecting reminders at key moments:
@@ -23,7 +25,7 @@ Create `.claude/settings.json` in your project root:
         "hooks": [
           {
             "type": "command",
-            "command": "./skills/self-improvement/scripts/activator.sh"
+            "command": "<skill-dir>/scripts/activator.sh"
           }
         ]
       }
@@ -34,7 +36,7 @@ Create `.claude/settings.json` in your project root:
         "hooks": [
           {
             "type": "command",
-            "command": "./skills/self-improvement/scripts/error-detector.sh"
+            "command": "<skill-dir>/scripts/error-detector.sh"
           }
         ]
       }
@@ -56,7 +58,7 @@ Add to `~/.claude/settings.json` for global activation:
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/skills/self-improvement/scripts/activator.sh"
+            "command": "<skill-dir>/scripts/activator.sh"
           }
         ]
       }
@@ -78,7 +80,7 @@ For lower overhead, use only the UserPromptSubmit hook:
         "hooks": [
           {
             "type": "command",
-            "command": "./skills/self-improvement/scripts/activator.sh"
+            "command": "<skill-dir>/scripts/activator.sh"
           }
         ]
       }
@@ -100,7 +102,7 @@ Codex uses the same hook system as Claude Code. Create `.codex/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "./skills/self-improvement/scripts/activator.sh"
+            "command": "<skill-dir>/scripts/activator.sh"
           }
         ]
       }
@@ -145,7 +147,7 @@ For high-value learnings that would benefit other sessions, consider skill extra
 ### Dry Run Extract Script
 
 ```bash
-./skills/self-improvement/scripts/extract-skill.sh test-skill --dry-run
+<skill-dir>/scripts/extract-skill.sh test-skill --dry-run
 ```
 
 Expected output shows the skill scaffold that would be created.
@@ -162,9 +164,9 @@ Expected output shows the skill scaffold that would be created.
 ### Permission Denied
 
 ```bash
-chmod +x ./skills/self-improvement/scripts/activator.sh
-chmod +x ./skills/self-improvement/scripts/error-detector.sh
-chmod +x ./skills/self-improvement/scripts/extract-skill.sh
+chmod +x <skill-dir>/scripts/activator.sh
+chmod +x <skill-dir>/scripts/error-detector.sh
+chmod +x <skill-dir>/scripts/extract-skill.sh
 ```
 
 ### Script Not Found
@@ -173,7 +175,7 @@ If using relative paths, ensure you're in the correct directory or use absolute 
 
 ```json
 {
-  "command": "/absolute/path/to/skills/self-improvement/scripts/activator.sh"
+  "command": "/absolute/path/to/skills/self-improving-agent/scripts/activator.sh"
 }
 ```
 
@@ -221,3 +223,10 @@ To temporarily disable without removing configuration:
 ```
 
 2. **Or delete the settings file**: Hooks won't run without configuration
+
+## 迁移
+
+如果你曾使用旧路径 `./skills/self-improvement/...`，请将其替换为你的实际 `<skill-dir>`，例如：
+
+- `./skills/self-improving-agent/scripts/activator.sh`
+- `./skills/self-improving-agent/scripts/error-detector.sh`

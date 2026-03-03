@@ -1,10 +1,15 @@
 # OpenClaw Integration
 
-Complete setup and usage guide for integrating the self-improvement skill with OpenClaw.
+Complete setup and usage guide for integrating the self-improving-agent skill with OpenClaw.
 
 ## Overview
 
 OpenClaw uses workspace-based prompt injection combined with event-driven hooks. Context is injected from workspace files at session start, and hooks can trigger on lifecycle events.
+
+为与 OpenClaw 的实际运行行为一致，本文使用两个占位符：
+
+- `<workspace>`：你的 OpenClaw workspace 目录（常见为 `~/.openclaw/workspace`，也可能是你运行 OpenClaw 的项目目录）
+- `<skill-dir>`：`<workspace>/skills/self-improving-agent`（ClawHub 默认安装位置）或 `~/.openclaw/skills/self-improving-agent`（全局安装）
 
 ## Workspace Structure
 
@@ -31,13 +36,19 @@ OpenClaw uses workspace-based prompt injection combined with event-driven hooks.
 ### 1. Install the Skill
 
 ```bash
-clawdhub install self-improving-agent
+clawhub install self-improving-agent
 ```
 
-Or copy manually:
+默认情况下，ClawHub 会安装到当前目录下的 `./skills/self-improving-agent`。因此建议在你的 `<workspace>` 目录中执行上述命令。
+
+或手动安装（两种都可用）：
 
 ```bash
-cp -r self-improving-agent ~/.openclaw/skills/
+# 方案 A：全局安装（跨 workspace 共享）
+git clone https://github.com/peterskoett/self-improving-agent.git ~/.openclaw/skills/self-improving-agent
+
+# 方案 B：workspace 本地安装（推荐，便于项目隔离）
+git clone https://github.com/peterskoett/self-improving-agent.git <workspace>/skills/self-improving-agent
 ```
 
 ### 2. Install the Hook (Optional)
@@ -56,16 +67,10 @@ openclaw hooks enable self-improvement
 
 ### 3. Create Learning Files
 
-Create the `.learnings/` directory in your workspace:
+在你的 `<workspace>` 目录下创建 `.learnings/`（推荐）：
 
 ```bash
-mkdir -p ~/.openclaw/workspace/.learnings
-```
-
-Or in the skill directory:
-
-```bash
-mkdir -p ~/.openclaw/skills/self-improving-agent/.learnings
+mkdir -p <workspace>/.learnings
 ```
 
 ## Injected Prompt Files
@@ -129,6 +134,51 @@ Log learnings to `.learnings/` for continuous improvement.
 
 1. **In-session**: Log to `.learnings/` as usual
 2. **Cross-session**: Promote to workspace files
+
+## PAHF 个性化工作流（推荐）
+
+为每个用户维护一份“可更新的偏好记忆”，用于行动前检索与行动后纠错写回。
+
+### 偏好记忆目录
+
+在 OpenClaw workspace 中创建：
+
+```bash
+mkdir -p ~/.openclaw/workspace/memory/preferences
+```
+
+每个用户一个文件：
+
+```
+~/.openclaw/workspace/memory/preferences/<user_key>.md
+```
+
+模板参考：`<skill-dir>/assets/PREFERENCES.md`
+
+### 会话内执行规则
+
+- 行动前：先检索偏好；若歧义且记忆不足，只问一个关键澄清问题；把回答先写入偏好记忆，再执行
+- 行动后：仅在用户明确纠错时写回；先做“显著性检测”，再进行“新增/覆盖合并”
+
+完整协议见：`<skill-dir>/PAHF.md`
+
+## 迁移
+
+### 从 `clawdhub` 迁移到 `clawhub`
+
+为与 OpenClaw 文档一致，统一使用：
+
+```bash
+clawhub install self-improving-agent
+```
+
+### 从旧路径 `skills/self-improvement/...` 迁移
+
+如果你在任何配置中引用了旧路径（例如 `./skills/self-improvement/scripts/activator.sh`），请替换为：
+
+- `./skills/self-improving-agent/scripts/activator.sh`
+- `./skills/self-improving-agent/scripts/error-detector.sh`
+- `./skills/self-improving-agent/scripts/extract-skill.sh`
 
 ### Promotion Decision Tree
 
